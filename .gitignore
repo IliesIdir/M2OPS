@@ -6,6 +6,9 @@ _consignes/
 CLAUDE.md
 .claude/
 
+# Guide personnel de prise en main, gardé en local.
+_guide/
+
 # Stockage brut : il se reconstruit par la collecte, on ne le versionne pas.
 articles_bruts/
 
