@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Lance l'environnement de développement : crée .env s'il manque, puis démarre docker compose.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [ ! -f .env ]; then
+    cp .env.example .env
+    # On génère un mot de passe aléatoire pour ne jamais avoir de secret par défaut dans le dépôt.
+    mot_de_passe=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
+    sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${mot_de_passe}/" .env
+    echo "Fichier .env cree a partir de .env.example"
+fi
+
+# Le dossier du stockage brut est créé ici pour qu'il appartienne à l'utilisateur et non à root.
+mkdir -p articles_bruts
+
+docker compose up --build --detach "$@"
+docker compose ps
