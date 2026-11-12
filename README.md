@@ -18,15 +18,28 @@ cd M2OPS
 bin/dev
 ```
 
-`bin/dev` crée `.env` à partir de `.env.example` s'il n'existe pas (avec un mot de passe aléatoire), construit l'image et démarre les conteneurs. Les items lus arrivent dans `articles_bruts/`.
+`bin/dev` crée `.env` à partir de `.env.example` s'il n'existe pas (avec un mot de passe aléatoire), construit l'image et démarre les conteneurs :
+
+| Service | Rôle |
+|---|---|
+| `postgres` | base de la gazette et base séparée de Dagster |
+| `preparation` | applique les migrations Alembic et recopie `sources.csv` dans la table `sources`, puis s'arrête |
+| `dagster-webserver` | interface de Dagster sur http://localhost:3000 |
+| `dagster-daemon` | lance la collecte toutes les 30 minutes |
+
+La collecte écrit un fichier JSON par item dans `articles_bruts/`. Le détail des données est dans [docs/donnees.md](docs/donnees.md).
 
 Commandes utiles :
 
 ```bash
 docker compose ps
-docker compose logs -f app
+docker compose logs -f dagster-daemon
+docker compose exec dagster-daemon python -m gazette collecter
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT nom, actif, echecs_consecutifs, derniere_reussite FROM sources ORDER BY nom"'
 docker compose down
 ```
+
+En cas de problème, voir [docs/runbook.md](docs/runbook.md).
 
 ## Tester
 
