@@ -1,0 +1,83 @@
+# Règles d'exclusion de la gazette, appliquées dans l'ordre des identifiants.
+# Un article est rejeté par la première règle qui le concerne ; le rapport de qualité
+# compte les rejets par identifiant. Chaque règle est décrite dans docs/qualite.md.
+# Les motifs sont des expressions régulières cherchées sans tenir compte de la casse,
+# dans le titre normalisé ; les liens, dans l'adresse de l'article ; les rubriques sont
+# comparées en entier, sans tenir compte de la casse.
+
+[titre]
+# R01_titre_vide : titre vide, trop court, ou gabarit de l'éditeur non rempli.
+longueur_min = 10
+gabarits = ['\$content', '\{\{', '\}\}', '^undefined$', '^null$']
+
+[fraicheur]
+# R04_date_future : publié plus de 10 minutes après qu'on l'a récupéré.
+tolerance_futur_minutes = 10
+# R05_trop_ancien : publié plus de 24 h avant qu'on l'a récupéré (objectif de fraîcheur).
+age_max_heures = 24
+
+[doublons]
+# R10_doublon et R11_doublon_proche : comparaison aux articles gardés sur cette fenêtre.
+fenetre_heures = 48
+# Indice de Jaccard sur les mots du titre : 0,8 correspond à "même titre à deux mots près".
+seuil_jaccard = 0.8
+
+[[mots_cles]]
+id = "R06_publi"
+description = "Contenus commerciaux : publi-reportages, partenariats, promotions"
+motifs = [
+    'publi-?(reportage|information|communiqu)',
+    'contenu (sponsoris|partenaire)',
+    'en partenariat avec',
+    'black friday',
+    'bons? plans?',
+    'code promo',
+    'remises? jusqu',
+    'ventes? priv[ée]es?',
+]
+liens = ['/publi-?(reportage|information)', '/contenu-partenaire', '/bons-plans/']
+rubriques = ["Publi-information", "Publireportage", "Partenaires", "Bons plans", "Shopping"]
+
+[[mots_cles]]
+id = "R07_horoscope"
+description = "Horoscope et astrologie"
+motifs = ['horoscope', 'astrolog', 'signe astrologique']
+liens = ['/horoscope']
+rubriques = ["Horoscope", "Astrologie"]
+
+[[mots_cles]]
+id = "R08_service"
+description = "Contenus de service sans actualité : programme TV, recettes"
+motifs = [
+    'programme t[ée]l[ée]',
+    'que regarder ce soir',
+    'ce soir (à|a) la t[ée]l[ée]',
+    'recette (facile|rapide|du jour)',
+]
+# Le titre seul ne suffit pas pour les recettes ("la recette du succès" est une expression
+# courante) : on se fie à la rubrique de l'éditeur dans l'adresse. Pas de motif d'adresse
+# pour la télévision : TV Mag range ses actualités télé sous /programme-tv/.
+liens = ['/les-recettes-du-monde/', '/recettes?/']
+rubriques = ["Programme TV", "Recettes", "Cuisine - Recettes"]
+
+[[mots_cles]]
+id = "R09_jeux"
+description = "Jeux, loteries et concours"
+motifs = [
+    '\bloto\b',
+    'euro ?millions?',
+    'jeux?-concours',
+    'sudoku',
+    'mots (fl[ée]ch[ée]s|crois[ée]s)',
+    'espace jeux',
+    '\b[àa] gagner\b',
+]
+liens = ['/jeux/', '/loto']
+rubriques = ["Loto - EuroMillions", "Jeux", "Jeux-concours"]
+
+[controles]
+# Contrôles de données lancés après chaque passage (asset checks de Dagster).
+# Une source dont plus de 80 % des articles du jour sont rejetés signale une règle trop
+# gourmande ou un flux qui a changé ; on ne juge qu'à partir de 10 articles dans la journée.
+taux_rejet_max = 0.8
+entres_min = 10

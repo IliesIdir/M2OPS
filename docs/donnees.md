@@ -1,6 +1,6 @@
 # Données de la gazette
 
-Dictionnaire des champs, du flux de l'éditeur jusqu'au stockage brut.
+Dictionnaire des champs et contrat de données, du flux de l'éditeur jusqu'aux articles propres.
 
 ## Table `sources` (PostgreSQL, migration `migrations/versions/0001_table_sources.py`)
 
@@ -70,3 +70,85 @@ Une ligne JSON par source et par passage, visible dans les journaux du daemon Da
 | `erreur`, `mise_en_sommeil` | Présents en cas d'échec |
 
 Une ligne `collecte_terminee` donne les totaux du passage ; les mêmes compteurs sont publiés en métadonnées de l'asset `articles_bruts` dans Dagster.
+
+## Table `articles_propres` (migration `0002_articles_propres_et_rejets.py`)
+
+Les articles gardés après normalisation et règles d'exclusion, alimentés à chaque passage par l'asset Dagster `articles_propres`.
+
+| Champ | Type | Obligatoire | Description |
+|---|---|---|---|
+| `id` | text, clé primaire | oui | Identifiant de l'item brut (nom du fichier dans `articles_bruts/<source>/`) |
+| `source` | text, clé étrangère vers `sources.nom` | oui | Source de l'article |
+| `lien` | text | oui | URL de l'article ; couple (`source`, `lien`) unique |
+| `titre` | text | oui | Titre normalisé : sans HTML, entités décodées, encodage réparé, espaces simples |
+| `resume` | text, défaut `''` | oui | Extrait normalisé, 300 caractères au plus |
+| `publie_le` | timestamptz | oui | Date de publication, en UTC |
+| `recupere_le` | timestamptz | oui | Date de collecte de l'item brut |
+| `rubrique` | text | non | Rubrique de l'éditeur, normalisée |
+| `nettoye_le` | timestamptz | oui | Date du passage de nettoyage qui a gardé l'article |
+| `passage_id` | text | oui | Identifiant du passage Dagster (run id), ou `manuel` |
+
+## Table `rejets`
+
+Les articles écartés, avec la règle qui les a écartés (voir `docs/qualite.md`).
+
+| Champ | Type | Obligatoire | Description |
+|---|---|---|---|
+| `id` | text, clé primaire | oui | Identifiant de l'item brut |
+| `source` | text, clé étrangère vers `sources.nom` | oui | Source de l'item |
+| `lien` | text | oui | URL de l'item |
+| `titre` | text | oui | Titre normalisé (peut être vide, c'est la règle R01) |
+| `regle` | text | oui | Identifiant de la règle : `R01_titre_vide` à `R11_doublon_proche` |
+| `publie_le` | timestamptz | non | Date de publication en UTC, vide si illisible (règle R03) |
+| `recupere_le` | timestamptz | oui | Date de collecte |
+| `rejete_le` | timestamptz | oui | Date du passage qui l'a écarté |
+| `passage_id` | text | oui | Identifiant du passage Dagster |
+
+Un item brut est traité une seule fois : le nettoyage ne lit que les fichiers dont l'id n'est ni dans `articles_propres` ni dans `rejets`. Tout un passage est écrit dans une seule transaction.
+
+## Contrat de données
+
+| Engagement | Valeur | Où c'est vérifié |
+|---|---|---|
+| Schéma | Tables ci-dessus, créées uniquement par les migrations Alembic | `migrations/versions/`, test `conftest.py` qui applique les migrations |
+| Fraîcheur de la collecte | Chaque source active interrogée toutes les 30 minutes | `derniere_reussite` dans `sources`, planification Dagster |
+| Fraîcheur des articles | Un article propre a été publié moins de 24 h avant sa collecte | Règle R05_trop_ancien |
+| Dates | En UTC, jamais dans le futur | Normalisation `date_en_utc`, règle R04, contrôle `aucune_date_future` |
+| Extrait | 300 caractères au plus | Normalisation `borner_extrait`, contrôle `extraits_bornes` |
+| Unicité | Un article par couple (source, lien) | Clé primaire `id`, contrainte `article_unique_par_source_et_lien` |
+
+### Ce qu'on ne stocke pas
+
+- le texte intégral des articles, les images et leurs liens, les commentaires ;
+- les noms des auteurs et des photographes (champs retirés du payload brut, jamais repris dans les tables) ;
+- aucune donnée sur les lecteurs : la gazette n'a ni comptes, ni abonnés, ni suivi d'audience.
+
+### Rétention
+
+| Données | Durée | Ensuite |
+|---|---|---|
+| Items bruts (`articles_bruts/`) | 90 jours après `recupere_le` | Supprimés : le brut ne sert qu'à rejouer un nettoyage ou à tracer un article |
+| `rejets` | 90 jours | Supprimés : ils ne servent qu'à ajuster les règles |
+| `articles_propres` | 1 an | Supprimés ; les thèmes et éditions gardent ce qu'il faut pour l'historique |
+| Rapports de qualité (`rapports/`) | 1 an | Supprimés |
+| Éditions publiées (TD 7) | 1 mois en ligne | Déplacées vers un stockage froid (archive compressée) |
+| Historique Dagster | 90 jours | Purgé |
+
+Ces durées sont écrites ici dès maintenant ; la purge automatique sera ajoutée avec l'infrastructure de production.
+
+## Traçabilité
+
+D'un article de l'édition, on remonte jusqu'au flux :
+
+1. `articles_propres.id` donne l'item brut : `articles_bruts/<source sans accent>/<id>.json`, tel que reçu, avec `recupere_le` ;
+2. `articles_propres.source` donne la source dans la table `sources`, donc l'adresse du flux (`url_flux`) ;
+3. `articles_propres.passage_id` donne le passage Dagster qui l'a gardé, et ses journaux dans l'interface ;
+4. pour un article écarté, `rejets.regle` dit quelle règle l'a écarté et pourquoi (`docs/qualite.md`).
+
+Exemple de requête :
+
+```sql
+SELECT a.id, a.titre, a.passage_id, s.url_flux
+FROM articles_propres a JOIN sources s ON s.nom = a.source
+WHERE a.lien = 'https://www.lemonde.fr/...';
+```

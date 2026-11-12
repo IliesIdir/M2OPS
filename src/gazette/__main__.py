@@ -3,11 +3,22 @@
 import argparse
 import json
 import logging
+from datetime import UTC, date, datetime
 from pathlib import Path
 
-from gazette.base import chemin_sources, creer_moteur, dossier_bruts
+from gazette.alertes import envoyer_alerte
+from gazette.base import (
+    chemin_regles,
+    chemin_sources,
+    creer_moteur,
+    dossier_bruts,
+    dossier_rapports,
+)
 from gazette.collecte import collecter_tout
+from gazette.nettoyage import nettoyer
 from gazette.premiere_source import lire_premiere_source
+from gazette.qualite import ecrire_rapport, rapport_du_jour
+from gazette.regles import charger_regles
 from gazette.sources import reactiver_source, synchroniser_sources
 
 
@@ -31,6 +42,12 @@ def main() -> None:
     reactiver = commandes.add_parser("reactiver-source", help="réveille une source en sommeil")
     reactiver.add_argument("nom")
 
+    commandes.add_parser("nettoyer", help="nettoie les nouveaux items bruts, à la main")
+    rapport = commandes.add_parser("rapport", help="écrit le rapport de qualité d'un jour")
+    rapport.add_argument("--jour", type=date.fromisoformat, default=None, help="AAAA-MM-JJ")
+    alerte = commandes.add_parser("tester-alerte", help="envoie un message de test sur Discord")
+    alerte.add_argument("message", nargs="?", default="test de l'alerte de la gazette")
+
     arguments = parseur.parse_args()
     if arguments.commande == "premiere-source":
         lire_premiere_source(arguments.nom, arguments.sources, arguments.sortie)
@@ -40,6 +57,18 @@ def main() -> None:
         print(json.dumps(collecter_tout(creer_moteur(), dossier_bruts())))
     elif arguments.commande == "reactiver-source":
         reactiver_source(creer_moteur(), arguments.nom)
+    elif arguments.commande == "nettoyer":
+        regles = charger_regles(chemin_regles())
+        print(
+            json.dumps(
+                nettoyer(creer_moteur(), dossier_bruts(), regles, "manuel"), ensure_ascii=False
+            )
+        )
+    elif arguments.commande == "rapport":
+        jour = arguments.jour or datetime.now(UTC).date()
+        print(ecrire_rapport(rapport_du_jour(creer_moteur(), jour), dossier_rapports()))
+    elif arguments.commande == "tester-alerte":
+        envoyer_alerte(arguments.message)
 
 
 if __name__ == "__main__":
