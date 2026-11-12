@@ -12,7 +12,8 @@ dependencies = [
     "feedparser>=6.0",
     "httpx>=0.28",
     "psycopg[binary]>=3.2",
-    "sqlalchemy>=2.0",
+    # SQLAlchemy 2.1 utilise psycopg 3 par défaut, ce que le stockage Postgres de Dagster ne supporte pas encore.
+    "sqlalchemy>=2.0,<2.1",
 ]
 
 [dependency-groups]
