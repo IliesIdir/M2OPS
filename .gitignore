@@ -1,0 +1,29 @@
+# Secrets : les vraies valeurs restent en local, seul .env.example est versionné.
+.env
+
+# Consignes des TD et fichiers de travail avec l'assistant, gardés en local.
+_consignes/
+CLAUDE.md
+.claude/
+
+# Stockage brut : il se reconstruit par la collecte, on ne le versionne pas.
+articles_bruts/
+
+# Environnement Python et caches des outils
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Fichiers des éditeurs et du système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
