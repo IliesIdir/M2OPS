@@ -35,7 +35,7 @@ Commandes utiles :
 docker compose ps
 docker compose logs -f dagster-daemon
 docker compose exec dagster-daemon python -m gazette collecter
-docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT nom, actif, echecs_consecutifs, derniere_reussite FROM sources ORDER BY nom"'
+docker compose exec postgres psql -U gazette -d gazette -c "SELECT nom, actif, echecs_consecutifs, derniere_reussite FROM sources ORDER BY nom"
 docker compose down
 ```
 
