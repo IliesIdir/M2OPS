@@ -20,8 +20,8 @@ grep -E '^[A-Z_]+=' .env.example | while IFS= read -r ligne; do
     fi
 done
 
-# Le dossier du stockage brut est créé ici pour qu'il appartienne à l'utilisateur et non à root.
-mkdir -p articles_bruts
+# Les dossiers montés sont créés ici pour qu'ils appartiennent à l'utilisateur et non à root.
+mkdir -p articles_bruts rapports
 
 docker compose up --build --detach --remove-orphans "$@"
 docker compose ps

@@ -14,6 +14,7 @@ x-gazette: &gazette
     DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
   volumes:
     - ./articles_bruts:/app/articles_bruts
+    - ./rapports:/app/rapports
     - stockage_dagster:/opt/dagster/dagster_home/storage
 
 services:

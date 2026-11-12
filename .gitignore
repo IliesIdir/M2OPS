@@ -9,6 +9,9 @@ CLAUDE.md
 # Stockage brut : il se reconstruit par la collecte, on ne le versionne pas.
 articles_bruts/
 
+# Rapports de qualité quotidiens : produits par le pipeline, archivés sur la machine.
+rapports/
+
 # Environnement Python et caches des outils
 .venv/
 __pycache__/

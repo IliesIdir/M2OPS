@@ -33,6 +33,7 @@ WORKDIR /app
 COPY --from=construction --chown=gazette:gazette /app/.venv /app/.venv
 COPY --chown=gazette:gazette sources.csv alembic.ini ./
 COPY --chown=gazette:gazette migrations ./migrations
+COPY --chown=gazette:gazette config ./config
 COPY --chown=gazette:gazette infra/dagster/dagster.yaml infra/dagster/workspace.yaml $DAGSTER_HOME/
 
 ENV PATH="/app/.venv/bin:$PATH" \
