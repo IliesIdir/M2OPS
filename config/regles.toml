@@ -55,8 +55,9 @@ motifs = [
     'recette (facile|rapide|du jour)',
 ]
 # Le titre seul ne suffit pas pour les recettes ("la recette du succès" est une expression
-# courante) : on se fie à la rubrique de l'éditeur dans l'adresse.
-liens = ['/les-recettes-du-monde/', '/recettes?/', '/programme-tv']
+# courante) : on se fie à la rubrique de l'éditeur dans l'adresse. Pas de motif d'adresse
+# pour la télévision : TV Mag range ses actualités télé sous /programme-tv/.
+liens = ['/les-recettes-du-monde/', '/recettes?/']
 rubriques = ["Programme TV", "Recettes", "Cuisine - Recettes"]
 
 [[mots_cles]]

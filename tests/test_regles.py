@@ -93,6 +93,17 @@ def test_une_recette_est_reconnue_par_son_lien():
     assert regle_de_rejet(recette, [], REGLES) == "R08_service"
 
 
+def test_une_actualite_tele_n_est_pas_un_programme_tv():
+    # Faux positif du rapport du 12/11/2026 : TV Mag range ses actualités sous /programme-tv/.
+    actualite = article(
+        "Présidentielle : TF1 et LCI organisent un débat entre cinq candidats",
+        rubrique="Actu télé",
+        lien="https://tvmag.lefigaro.fr/programme-tv/actu-tele/presidentielle-debat-20261112",
+    )
+
+    assert regle_de_rejet(actualite, [], REGLES) is None
+
+
 def test_dates_futures_anciennes_ou_absentes():
     assert regle_de_rejet(article("Un titre d'actualité normal", age_heures=-1), [], REGLES) == (
         "R04_date_future"
