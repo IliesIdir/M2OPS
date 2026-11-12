@@ -78,6 +78,30 @@ Pour vérifier le canal d'alerte sans attendre un vrai problème :
 docker compose exec dagster-daemon python -m gazette tester-alerte
 ```
 
+### Déclencher l'alerte une fois pour de vrai
+
+On rend un fait faux dans les vraies données, on laisse le contrôle le détecter, puis on remet les données en état. Procédure jouée le 12/11/2026 (passage `2bc18433`) : le contrôle `aucune_date_future` est passé en échec et l'alerte a été déclenchée ; le webhook n'étant pas encore configuré, elle est restée dans les journaux du daemon (`alerte non envoyee (DISCORD_WEBHOOK_URL absent)`). A rejouer une fois `DISCORD_WEBHOOK_URL` renseigné dans `.env` (puis `bin/dev`).
+
+1. Insérer un article daté du lendemain :
+
+   ```bash
+   docker compose exec postgres psql -U gazette -d gazette -c "INSERT INTO articles_propres (id, source, lien, titre, resume, publie_le, recupere_le, nettoye_le, passage_id) VALUES ('test-alerte', 'Le Monde', 'https://exemple.invalid/test-alerte', 'Article de test date du futur', '', now() + interval '1 day', now(), now(), 'test-alerte')"
+   ```
+
+2. Lancer un passage (ou attendre le suivant) :
+
+   ```bash
+   docker compose exec dagster-daemon dagster job launch -j collecte_et_nettoyage -w /opt/dagster/dagster_home/workspace.yaml
+   ```
+
+3. Constater le contrôle `aucune_date_future` en rouge dans Dagster et le message sur Discord : `[gazette] controle de qualite en echec : aucune_date_future (1 article(s) date(s) du futur)`.
+
+4. Supprimer l'article de test :
+
+   ```bash
+   docker compose exec postgres psql -U gazette -d gazette -c "DELETE FROM articles_propres WHERE id = 'test-alerte'"
+   ```
+
 ## Rapport de qualité
 
 À chaque passage, le rapport du jour est recalculé depuis les tables et écrit dans `rapports/qualite-AAAA-MM-JJ.md` (un fichier par jour, les jours passés restent archivés). Il donne :
