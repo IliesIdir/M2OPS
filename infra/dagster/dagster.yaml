@@ -1,0 +1,31 @@
+# Configuration de l'instance Dagster, partagée par le webserver et le daemon.
+
+# Dagster garde l'historique des passages, les planifications et les journaux d'événements
+# dans sa propre base PostgreSQL, séparée de celle de la gazette.
+storage:
+  postgres:
+    postgres_db:
+      username:
+        env: POSTGRES_USER
+      password:
+        env: POSTGRES_PASSWORD
+      hostname: postgres
+      db_name:
+        env: DAGSTER_DB
+      port: 5432
+
+# Un seul passage à la fois : deux collectes en parallèle interrogeraient deux fois les éditeurs.
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1
+
+# Les journaux Python du paquet gazette (une ligne JSON par source) remontent dans l'interface.
+python_logs:
+  managed_python_loggers:
+    - gazette
+  python_log_level: INFO
+
+telemetry:
+  enabled: false

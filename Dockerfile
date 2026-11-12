@@ -21,12 +21,19 @@ RUN uv sync --locked --no-dev --no-editable
 
 FROM python:3.12-slim-bookworm AS finale
 
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+
 # On fait tourner l'application avec un utilisateur sans droits d'administration.
-RUN useradd --create-home --uid 1000 gazette
+# Le dossier storage de Dagster (journaux des passages) doit lui appartenir.
+RUN useradd --create-home --uid 1000 gazette \
+    && mkdir -p "$DAGSTER_HOME/storage" \
+    && chown -R gazette:gazette /opt/dagster
 
 WORKDIR /app
 COPY --from=construction --chown=gazette:gazette /app/.venv /app/.venv
-COPY --chown=gazette:gazette sources.csv ./
+COPY --chown=gazette:gazette sources.csv alembic.ini ./
+COPY --chown=gazette:gazette migrations ./migrations
+COPY --chown=gazette:gazette infra/dagster/dagster.yaml infra/dagster/workspace.yaml $DAGSTER_HOME/
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
