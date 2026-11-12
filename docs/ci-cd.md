@@ -31,7 +31,17 @@ gh api repos/IliesIdir/M2OPS/branches/main/protection --jq '.required_status_che
 
 ## Preuve qu'une CI rouge bloque
 
-A compléter après l'essai : une branche avec un test volontairement cassé, poussée, CI rouge constatée, branche supprimée.
+Essai fait le 12/11/2026 :
+
+| Etape | Résultat |
+|---|---|
+| Branche `ci-rouge-preuve` créée depuis `td2-socle` (CI verte, run 43243712672) | |
+| Test `test_parser_flux_lit_les_trois_items_du_monde` cassé exprès (`== 4` au lieu de `== 3`), commit `3f21f00` poussé | |
+| CI déclenchée par le push (run 43244674223) | job `lint-et-tests` en échec à l'étape "Lint et tests" |
+| Job `image` | non lancé (`skipped`), car il dépend de `lint-et-tests` : aucune image n'est construite ni publiée |
+| Branche supprimée (locale et distante) | |
+
+Avec la protection de `main` active, une pull request depuis cette branche n'aurait pas pu être mergée : les contrôles requis `lint-et-tests` et `image` n'étaient pas verts.
 
 ## Mesures
 
