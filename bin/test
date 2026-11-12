@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Lance le lint puis les tests, exactement comme la CI.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "Lint (ruff check et ruff format --check)"
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+
+echo "Tests (pytest)"
+uv run --locked pytest "$@"
