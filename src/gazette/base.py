@@ -21,3 +21,13 @@ def dossier_bruts() -> Path:
 def chemin_sources() -> Path:
     """Renvoie le chemin de sources.csv."""
     return Path(os.environ.get("CHEMIN_SOURCES", "sources.csv"))
+
+
+def chemin_regles() -> Path:
+    """Renvoie le chemin du fichier des règles d'exclusion."""
+    return Path(os.environ.get("CHEMIN_REGLES", "config/regles.toml"))
+
+
+def dossier_rapports() -> Path:
+    """Renvoie le dossier où sont archivés les rapports de qualité quotidiens."""
+    return Path(os.environ.get("DOSSIER_RAPPORTS", "rapports"))
