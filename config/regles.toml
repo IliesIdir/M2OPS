@@ -73,3 +73,10 @@ motifs = [
 ]
 liens = ['/jeux/', '/loto']
 rubriques = ["Loto - EuroMillions", "Jeux", "Jeux-concours"]
+
+[controles]
+# Contrôles de données lancés après chaque passage (asset checks de Dagster).
+# Une source dont plus de 80 % des articles du jour sont rejetés signale une règle trop
+# gourmande ou un flux qui a changé ; on ne juge qu'à partir de 10 articles dans la journée.
+taux_rejet_max = 0.8
+entres_min = 10
