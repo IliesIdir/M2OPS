@@ -67,7 +67,7 @@ Point d'attention : toutes les sources retenues limitent l'usage de leurs conten
 |---|---|---|
 | Langage | Python 3.12 | Go : bon pour un collecteur, mais pas d'écosystème pour les embeddings. Node.js : même limite côté ML |
 | Dépendances | uv | Poetry : plus lent, plus de configuration. pip + venv : pas de fichier de verrouillage natif, environnement moins reproductible |
-| Lecture des flux | feedparser | Parseur maison (ElementTree) : il faudrait gérer RSS, Atom, encodages et formats de date nous-mêmes. atoma : moins tolérant aux flux mal formés |
+| Lecture des flux | feedparser | Parseur maison (ElementTree) : on devrait gérer soi-même RSS, Atom, encodages et formats de date. atoma : moins tolérant aux flux mal formés |
 | Client HTTP | httpx | requests : pas de timeout par défaut, pas de transport de test intégré. urllib : bas niveau, en-têtes conditionnels plus verbeux |
 | Stockage brut | Fichiers JSON | JSONB dans PostgreSQL : on ne garderait plus le brut à part du propre. MinIO : un service de plus pour quelques Mo par jour |
 | Stockage propre | PostgreSQL | SQLite : un seul écrivain, gênant avec l'orchestrateur et la collecte en parallèle. DuckDB : orienté analyse, mono-processus en écriture |
