@@ -80,7 +80,14 @@ docker compose exec dagster-daemon python -m gazette tester-alerte
 
 ### Déclencher l'alerte une fois pour de vrai
 
-On rend un fait faux dans les vraies données, on laisse le contrôle le détecter, puis on remet les données en état. Procédure jouée le 12/11/2026 (passage `2bc18433`) : le contrôle `aucune_date_future` est passé en échec et l'alerte a été déclenchée ; le webhook n'étant pas encore configuré, elle est restée dans les journaux du daemon (`alerte non envoyee (DISCORD_WEBHOOK_URL absent)`). A rejouer une fois `DISCORD_WEBHOOK_URL` renseigné dans `.env` (puis `bin/dev`).
+On rend un fait faux dans les vraies données, on laisse le contrôle le détecter, puis on remet les données en état.
+
+| Date | Passage Dagster | Résultat |
+|---|---|---|
+| 12/11/2026, 15 h 33 UTC | `2bc18433` | Contrôle `aucune_date_future` en échec, alerte déclenchée mais restée dans les journaux : le webhook n'était pas encore configuré (`alerte non envoyee (DISCORD_WEBHOOK_URL absent)`) |
+| 12/11/2026, 16 h 19 UTC | `4040ee1b` | Webhook configuré dans `.env`. Message de test (`tester-alerte`) envoyé, puis contrôle `aucune_date_future` en échec et alerte envoyée et acceptée par Discord : `[gazette] controle de qualite en echec : aucune_date_future (1 article(s) date(s) du futur)`. Les trois autres contrôles sont restés au vert. Article de test supprimé ensuite, collecte planifiée toujours active |
+
+L'adresse du webhook est un secret : elle n'est que dans `.env`, jamais dans le dépôt.
 
 1. Insérer un article daté du lendemain :
 
