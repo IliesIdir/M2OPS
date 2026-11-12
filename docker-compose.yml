@@ -1,0 +1,36 @@
+# Environnement de développement de la gazette, décrit en code.
+# Les variables viennent du fichier .env (créé par bin/dev à partir de .env.example).
+
+services:
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?a definir dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?a definir dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:?a definir dans .env}
+    volumes:
+      - donnees_postgres:/var/lib/postgresql/data
+    # On n'expose pas le port 5432 sur la machine : seuls les conteneurs du projet parlent à la base.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    image: gazette:dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./articles_bruts:/app/articles_bruts
+    # En attendant l'orchestrateur du TD 3, on relit la première source toutes les 30 minutes
+    # avec une simple boucle, ce qui respecte la fréquence maximale fixée dans le cadrage.
+    command: >
+      sh -c 'while true; do python -m gazette premiere-source "Le Monde"; sleep 1800; done'
+
+volumes:
+  donnees_postgres:

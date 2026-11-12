@@ -1,0 +1,15 @@
+# On n'envoie au build que ce dont l'image a besoin.
+.git
+.github
+.venv
+.env
+_consignes
+.claude
+CLAUDE.md
+articles_bruts
+rapports
+tests
+docs
+**/__pycache__
+.pytest_cache
+.ruff_cache
