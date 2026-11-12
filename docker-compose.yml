@@ -1,5 +1,20 @@
-# Environnement de développement de la gazette, décrit en code.
+# Environnement de la gazette, décrit en code : PostgreSQL, une étape de préparation de la base,
+# puis Dagster (webserver pour l'interface, daemon pour la planification).
 # Les variables viennent du fichier .env (créé par bin/dev à partir de .env.example).
+
+# Réglages communs aux trois services qui utilisent l'image de la gazette.
+x-gazette: &gazette
+  build: .
+  image: gazette:dev
+  environment:
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    DAGSTER_DB: ${DAGSTER_DB}
+    DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+  volumes:
+    - ./articles_bruts:/app/articles_bruts
+    - stockage_dagster:/opt/dagster/dagster_home/storage
 
 services:
   postgres:
@@ -9,8 +24,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?a definir dans .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?a definir dans .env}
       POSTGRES_DB: ${POSTGRES_DB:?a definir dans .env}
+      DAGSTER_DB: ${DAGSTER_DB:?a definir dans .env}
     volumes:
       - donnees_postgres:/var/lib/postgresql/data
+      # Crée la base de Dagster au premier démarrage.
+      - ./infra/postgres/creer-base-dagster.sh:/docker-entrypoint-initdb.d/creer-base-dagster.sh:ro
     # On n'expose pas le port 5432 sur la machine : seuls les conteneurs du projet parlent à la base.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -18,19 +36,40 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
-    build: .
-    image: gazette:dev
-    restart: unless-stopped
+  # Applique les migrations et recopie sources.csv dans la table sources, puis s'arrête.
+  preparation:
+    <<: *gazette
+    restart: on-failure
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./articles_bruts:/app/articles_bruts
-    # En attendant l'orchestrateur du TD 3, on relit la première source toutes les 30 minutes
-    # avec une simple boucle, ce qui respecte la fréquence maximale fixée dans le cadrage.
-    command: >
-      sh -c 'while true; do python -m gazette premiere-source "Le Monde"; sleep 1800; done'
+    command: sh -c "alembic upgrade head && python -m gazette synchroniser-sources"
+
+  dagster-webserver:
+    <<: *gazette
+    restart: unless-stopped
+    depends_on:
+      preparation:
+        condition: service_completed_successfully
+    command: dagster-webserver -h 0.0.0.0 -p 3000 -w /opt/dagster/dagster_home/workspace.yaml
+    # Interface accessible seulement depuis la machine elle-même.
+    ports:
+      - "127.0.0.1:${DAGSTER_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/server_info')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Le daemon déclenche la planification toutes les 30 minutes et lance les passages.
+  dagster-daemon:
+    <<: *gazette
+    restart: unless-stopped
+    depends_on:
+      preparation:
+        condition: service_completed_successfully
+    command: dagster-daemon run -w /opt/dagster/dagster_home/workspace.yaml
 
 volumes:
   donnees_postgres:
+  stockage_dagster:

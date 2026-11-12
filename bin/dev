@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lance l'environnement de développement : crée .env s'il manque, puis démarre docker compose.
+# Lance l'environnement de développement : crée ou complète .env, puis démarre docker compose.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -11,8 +11,17 @@ if [ ! -f .env ]; then
     echo "Fichier .env cree a partir de .env.example"
 fi
 
+# Un .env créé avant l'ajout d'une variable reçoit cette variable avec sa valeur d'exemple.
+grep -E '^[A-Z_]+=' .env.example | while IFS= read -r ligne; do
+    variable="${ligne%%=*}"
+    if ! grep -q "^${variable}=" .env; then
+        echo "$ligne" >> .env
+        echo "Variable ajoutee a .env : ${variable}"
+    fi
+done
+
 # Le dossier du stockage brut est créé ici pour qu'il appartienne à l'utilisateur et non à root.
 mkdir -p articles_bruts
 
-docker compose up --build --detach "$@"
+docker compose up --build --detach --remove-orphans "$@"
 docker compose ps

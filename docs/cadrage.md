@@ -72,7 +72,8 @@ Point d'attention : toutes les sources retenues limitent l'usage de leurs conten
 | Stockage brut | Fichiers JSON | JSONB dans PostgreSQL : on ne garderait plus le brut à part du propre. MinIO : un service de plus pour quelques Mo par jour |
 | Stockage propre | PostgreSQL | SQLite : un seul écrivain, gênant avec l'orchestrateur et la collecte en parallèle. DuckDB : orienté analyse, mono-processus en écriture |
 | Migrations | Alembic | Scripts SQL à la main : pas de suivi de la version appliquée. Flyway : outil Java, une stack de plus |
-| Orchestration | Dagster | Airflow : plus lourd (scheduler, webserver, workers), pensé en tâches plutôt qu'en données. cron : ni historique, ni reprise, ni contrôles de qualité |
+| Accès à la base (TD 3) | SQLAlchemy 2.0 (requêtes SQL écrites avec `text()`) et le pilote psycopg | ORM complet : plus de code et de concepts pour quelques requêtes simples. Pilote seul sans SQLAlchemy : Alembic et Dagster en dépendent déjà, autant s'en servir pour la connexion. SQLAlchemy est limité à 2.0 car la 2.1 passe à psycopg 3 par défaut, que le stockage Postgres de Dagster ne supporte pas encore |
+| Orchestration | Dagster (webserver + daemon, historique dans une base PostgreSQL séparée) | Airflow : plus lourd (scheduler, webserver, workers, triggerer), pensé en tâches plutôt qu'en données. cron : ni historique, ni reprise, ni contrôles de qualité. Dagster raisonne en assets (`articles_bruts`, `articles_propres`), garde les métadonnées de chaque passage et offre les asset checks pour les contrôles de qualité du TD 4 |
 | Tests | pytest | unittest : plus verbeux, fixtures moins pratiques. Tests manuels : non rejouables en CI |
 | Lint | ruff | flake8 + black : deux outils plus lents à configurer ensemble. pylint : lent et bavard pour un petit projet |
 | Conteneurs | Docker, Docker Compose | Podman : compatible mais moins documenté sous Windows/WSL. Kubernetes local (kind) : trop lourd pour une seule machine |

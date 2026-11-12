@@ -1,0 +1,5 @@
+# Où Dagster trouve le code du pipeline : le module gazette.definitions installé dans l'image.
+load_from:
+  - python_module:
+      module_name: gazette.definitions
+      working_directory: /app

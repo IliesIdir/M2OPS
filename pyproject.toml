@@ -5,8 +5,15 @@ description = "Pipeline qui lit la presse régionale et nationale et publie chaq
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.14",
+    "dagster>=1.11",
+    "dagster-postgres>=0.27",
+    "dagster-webserver>=1.11",
     "feedparser>=6.0",
     "httpx>=0.28",
+    "psycopg[binary]>=3.2",
+    # SQLAlchemy 2.1 utilise psycopg 3 par défaut, ce que le stockage Postgres de Dagster ne supporte pas encore.
+    "sqlalchemy>=2.0,<2.1",
 ]
 
 [dependency-groups]
@@ -29,3 +36,5 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Avertissement propre à SQLite, qu'on utilise seulement dans les tests (PostgreSQL en vrai).
+filterwarnings = ["ignore:The default datetime adapter is deprecated:DeprecationWarning"]
