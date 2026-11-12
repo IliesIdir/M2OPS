@@ -26,8 +26,8 @@ def test_retirer_html():
 def test_reparer_encodage():
     assert reparer_encodage("Ã‰lysÃ©e : la rÃ©forme") == "Élysée : la réforme"
     assert reparer_encodage("Élysée") == "Élysée"
-    # Un texte qui contient "Â" sans être mal encodé n'est pas abîmé.
-    assert reparer_encodage("Â bientôt 😀") == "Â bientôt 😀"
+    # Un texte qui contient "Â" sans être mal encodé n'est pas abîmé (ici, des kanjis).
+    assert reparer_encodage("Â bientôt à 東京") == "Â bientôt à 東京"
 
 
 def test_normaliser_espaces():
