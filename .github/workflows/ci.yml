@@ -17,9 +17,9 @@ jobs:
   lint-et-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10
         with:
           version: "0.9.5"
 
@@ -31,7 +31,7 @@ jobs:
     needs: lint-et-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Le tag dit d'où vient l'image : date et heure UTC du build, puis le sha court du commit.
       - name: Calcul du tag
@@ -45,14 +45,14 @@ jobs:
 
       - name: Connexion à ghcr.io
         if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Construction (et envoi sur main)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: ${{ github.ref == 'refs/heads/main' }}
