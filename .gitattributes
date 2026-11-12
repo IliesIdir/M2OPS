@@ -1,0 +1,3 @@
+# On force les fins de ligne LF : les scripts de bin/ tournent sous Linux (WSL, Docker, CI)
+# et un retour chariot Windows les casserait.
+* text=auto eol=lf
